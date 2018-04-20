@@ -1,6 +1,7 @@
 #include "mycontours.h"
 #include <QVector>
 #include <QColor>
+#include <QDebug>
 #include "qcustomplot/qcustomplot.h"
 
 MyContours::MyContours(QVector<QVector<double> > &X, QVector<QVector<double> > &Y, QVector<QVector<double> > &F, QCustomPlot *plot)
@@ -18,7 +19,7 @@ MyContours::MyContours(QVector<QVector<double> > &X, QVector<QVector<double> > &
     if (Nsteps==0 || Msteps==0)
     {
         // friendly error message and die
-        QtWarning() << "too few grid points for contour plot";
+        qWarning() << "too few grid points for contour plot";
     }
     else
     {
@@ -29,14 +30,14 @@ MyContours::MyContours(QVector<QVector<double> > &X, QVector<QVector<double> > &
     }
 }
 
-MyContours::~MyContour(void)
+MyContours::~MyContours(void)
 {
 
 }
 
 void MyContours::setLevels(QVector<double> &levels)
 {
-    if (levels)
+    if (levels.size() > 1)
     {
         //mLevels.clear();
         mLevels = levels;
@@ -51,14 +52,14 @@ void MyContours::setLevels(QVector<double> &levels, QVector<QColor> &colors)
     else
         mLevels.clear();
 
-    if (colors && colors.size()>0)
+    if (colors.size()>0)
     {
         mColors.clear();
         if (colors.size() == levels.size())
             mColors = colors;
         if (colors.size() > levels.size())
         {
-            mColors = colors.resize(levels.size());
+            mColors.resize(levels.size());
         }
         if (colors.size() < levels.size())
         {

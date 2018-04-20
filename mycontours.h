@@ -1,6 +1,9 @@
 #ifndef MYCONTOURS_H
 #define MYCONTOURS_H
 
+#include <QVector>
+#include <QColor>
+
 class QCustomPlot;
 class QCPCurve;
 

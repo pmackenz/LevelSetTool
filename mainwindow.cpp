@@ -130,7 +130,7 @@ void MainWindow::refreshUI(void)
 
     // plot level set
     // contours for level set function
-    QVector<QVector<double> > &F = driver->getF();
+    QVector<QVector<double> > *F = driver->getF();
     int mxSteps = driver->stepsX();
     if (driver->stepsY() > mxSteps) mxSteps = driver->stepsY();
 
@@ -143,15 +143,15 @@ void MainWindow::refreshUI(void)
     if (showLevelSet)
     {
         if (contours) delete contours;
-        contours = new MyContours(X, Y, F, ui->plotWidget);
-        contours->setLevels(levels);
+        //contours = new MyContours(X, Y, F, ui->plotWidget);
+        //contours->setLevels(levels);
         if (showLabels)
         {
-            contours->setLabels(true);
+        //    contours->setLabels(true);
         }
     }
 
-    axes.contour(X, Y, F, [0.0], colors=('r'));
+    //axes.contour(X, Y, F, [0.0], colors=('r'));
 
     // set ranges appropriate to show data:
     customPlot->xAxis->setRange(-lenx/2., lenx/2.);

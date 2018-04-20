@@ -29,7 +29,7 @@ public:
     LINE_INFO getBase4line(QPointF xi, QPointF xj);
     void stepOne(double deltaT);
     void reset(void);
-    QVector<QVector<double> > & getF(void);
+    QVector<QVector<double> > * getF(void);
     QList<QVector<double> > * getGrid(void);
     QList<QVector<double> > * getShape(void);
     int stepsX(void) { return Nsteps; };
