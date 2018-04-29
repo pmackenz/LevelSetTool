@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #ifdef USE_QWT
     plot = new QwtPlot(ui->plotWidget);
+    plot->setCanvasBackground(QBrush(Qt::white));
 #else
     plot = new QCustomPlot(ui->plotWidget);
 #endif
@@ -298,8 +299,8 @@ void MainWindow::QwtRefreshUI(void)
 
     // set ranges appropriate to show data:
 
-    //customPlot->xAxis->setRange(-lenx/2., lenx/2.);
-    //customPlot->yAxis->setRange(-leny/2., leny/2.);
+    plot->setAxisScale(QwtPlot::xBottom, -lenx/2., lenx/2.);
+    plot->setAxisScale(QwtPlot::yLeft,   -leny/2., leny/2.);
 
     // set labels:
 
