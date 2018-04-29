@@ -6,8 +6,12 @@
 #define GRIDSIZE 20.0
 #define NUMGRIDPOINTS 40
 
+#define USE_QWT
+
 class LevelSet;
 class MyContours;
+class QCustomPlot;
+class QwtPlot;
 
 namespace Ui {
 class MainWindow;
@@ -23,6 +27,11 @@ public:
 
 private:
     void refreshUI(void);
+#ifdef USE_QWT
+    void QwtRefreshUI(void);
+#else
+    void QCPRefreshUI(void);
+#endif
 
 private slots:
     void on_cbx_selectShape_currentIndexChanged(int index);
@@ -47,6 +56,12 @@ private:
     bool showGrid     = true;
     bool showLabels   = true;
     bool showLevelSet = true;
+
+#ifdef USE_QWT
+    QwtPlot *plot;
+#else
+    QCustomPlot *plot;
+#endif
 };
 
 #endif // MAINWINDOW_H

@@ -5,6 +5,17 @@
 #include <QVector>
 #include "mycontours.h"
 
+#ifdef USE_QWT
+
+#include <qwt.h>
+#include <qwt_plot.h>
+#include <qwt_plot_canvas.h>
+#include <qwt_plot_item.h>
+#include <qwt_plot_curve.h>
+#include <qwt_symbol.h>
+
+#endif
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -47,6 +58,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->chk_showLabels->setChecked(showLabels);
     ui->chk_showLevelSet->setChecked(showLevelSet);
 
+#ifdef USE_QWT
+    plot = new QwtPlot(ui->plotWidget);
+#else
+    plot = new QCustomPlot(ui->plotWidget);
+#endif
+    QLayout *lyt = ui->plotWidget->layout();
+    lyt->addWidget(plot);
+
     refreshUI();
 }
 
@@ -58,13 +77,23 @@ MainWindow::~MainWindow()
 
 void MainWindow::refreshUI(void)
 {
+#ifdef USE_QWT
+    this->QwtRefreshUI();
+#else
+    this->QCPRefreshUI();
+#endif
+}
+
+#ifndef USE_QWT
+void MainWindow::QCPRefreshUI(void)
+{
     if (!driver) return;
 
     double *dim = driver->getSize();
     double lenx = dim[0];
     double leny = dim[1];
 
-    QCustomPlot *customPlot = ui->plotWidget;
+    QCustomPlot *customPlot = plot;
 
     customPlot->clearPlottables();
     customPlot->clearItems();
@@ -165,9 +194,126 @@ void MainWindow::refreshUI(void)
     customPlot->xAxis->setTickLength(0, 5);
     customPlot->xAxis->setSubTickLength(0, 3);
 
-    ui->plotWidget->replot();
+    plot->replot();
 }
+#endif
 
+#ifdef USE_QWT
+void MainWindow::QwtRefreshUI(void)
+{
+    if (!driver) return;
+
+    double *dim = driver->getSize();
+    double lenx = dim[0];
+    double leny = dim[1];
+
+    QwtPlot *customPlot = plot;
+
+    QwtPlotItemList list = customPlot->itemList();
+    foreach (QwtPlotItem *item, list)
+    {
+        item->detach();
+        delete item;
+    }
+
+    customPlot->setLocale(QLocale(QLocale::English, QLocale::UnitedStates)); // period as decimal separator and comma as thousand separator
+    customPlot->legend();
+    QFont legendFont = font();  // start out with MainWindow's font..
+    legendFont.setPointSize(9); // and make a bit smaller for legend
+    //customPlot->legend()->setFont(legendFont);
+    //customPlot->legend()->setBrush(QBrush(QColor(255,255,255,230)));
+
+    // by default, the legend is in the inset layout of the main axis rect. So this is how we access it to change legend placement:
+    //customPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
+
+    // setup for graph 0: key axis left, value axis bottom
+    QwtPlotCurve *grid = new QwtPlotCurve();
+    grid->setStyle(QwtPlotCurve::CurveStyle::NoCurve);
+    QwtSymbol *theSymbol = new QwtSymbol(QwtSymbol::Cross);
+    theSymbol->setSize(5);
+    theSymbol->setColor(QColor(100, 100, 255));
+    grid->setSymbol(theSymbol);
+    grid->setTitle("Grid");
+
+    grid->attach(customPlot);
+
+
+    // setup for graph 1: key axis bottom, value axis left (those are the default axes)
+    // will contain bottom maxwell-like function with error bars
+
+    // plot the surface
+    QList<QVector<double>> *curve = driver->getShape();
+
+    if (curve)
+    {
+        QwtPlotCurve* newCurve = new QwtPlotCurve();
+        //customPlot->xAxis, customPlot->yAxis);
+        newCurve->setTitle("initial curve");
+
+        newCurve->setPen(QPen(QColor(255,0,0)));
+        newCurve->setSamples((*curve)[0], (*curve)[1]);
+
+        newCurve->setItemAttribute(QwtPlotItem::Legend, false);
+        newCurve->attach(customPlot);
+    }
+
+    // plot the grid
+    if (showGrid)
+    {
+        QList<QVector<double>> *gridPoints = driver->getGrid();
+
+        if (gridPoints)
+        {
+            QVector<double> x = (*gridPoints)[0];
+            QVector<double> y = (*gridPoints)[1];
+
+            grid->setSamples(x, y);
+        }
+    }
+
+    // plot level set
+    // contours for level set function
+    QVector<QVector<double> > *F = driver->getF();
+    int mxSteps = driver->stepsX();
+    if (driver->stepsY() > mxSteps) mxSteps = driver->stepsY();
+
+    QVector<double> levels(4*mxSteps + 1);
+
+    levels[0] = -2.*mxSteps;
+    for (int i=1; i<= 4*mxSteps; i++)
+        levels[i] = levels[i-1] + 1.0;
+
+    if (showLevelSet)
+    {
+        if (contours) delete contours;
+        //contours = new MyContours(X, Y, F, ui->plotWidget);
+        //contours->setLevels(levels);
+        if (showLabels)
+        {
+        //    contours->setLabels(true);
+        }
+    }
+
+    //axes.contour(X, Y, F, [0.0], colors=('r'));
+
+    // set ranges appropriate to show data:
+
+    //customPlot->xAxis->setRange(-lenx/2., lenx/2.);
+    //customPlot->yAxis->setRange(-leny/2., leny/2.);
+
+    // set labels:
+
+    //customPlot->xAxis->setLabel("x");
+    //customPlot->yAxis->setLabel("y");
+
+    // make ticks on bottom axis go outward:
+
+    //customPlot->xAxis->setTickLength(0, 5);
+    //customPlot->xAxis->setSubTickLength(0, 3);
+
+    plot->replot();
+}
+#endif
 
 /* *** slots *** */
 
