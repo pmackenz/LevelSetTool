@@ -13,8 +13,13 @@
 #include <qwt_plot_item.h>
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
+#include <qwt_plot_spectrogram.h>
+#include <qwt_matrix_raster_data.h>
+#include <qwt_raster_data.h>
 
 #endif
+
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -43,8 +48,8 @@ MainWindow::MainWindow(QWidget *parent) :
     if (driver)
     {
         driver->setGridSize(GRIDSIZE, GRIDSIZE, NUMGRIDPOINTS,NUMGRIDPOINTS);
-        driver->setAlgorithm(TimeStepperType::FiniteDifference);
-        // driver->setAlgorithm(TimeStepperType::ControlVolume);
+        //driver->setAlgorithm(TimeStepperType::FiniteDifference);
+        driver->setAlgorithm(TimeStepperType::ControlVolume);
         driver->setShape(ui->cbx_selectShape->currentIndex());
         driver->setVelocityType(ui->cbx_selectVelocityField->currentIndex());
 
@@ -272,26 +277,48 @@ void MainWindow::QwtRefreshUI(void)
         }
     }
 
-    // plot level set
-    // contours for level set function
-    QVector<QVector<double> > *F = driver->getF();
-    int mxSteps = driver->stepsX();
-    if (driver->stepsY() > mxSteps) mxSteps = driver->stepsY();
-
-    QVector<double> levels(4*mxSteps + 1);
-
-    levels[0] = -2.*mxSteps;
-    for (int i=1; i<= 4*mxSteps; i++)
-        levels[i] = levels[i-1] + 1.0;
-
     if (showLevelSet)
     {
-        if (contours) delete contours;
+        // plot level set
+        // contours for level set function
+        QVector<QVector<double> > *F = driver->getF();
+
+        QwtPlotSpectrogram *spectrogram = new QwtPlotSpectrogram(tr("Level set function"));
+        spectrogram->setDisplayMode( QwtPlotSpectrogram::ContourMode, true );
+        spectrogram->setDisplayMode( QwtPlotSpectrogram::ImageMode, false );
+
+        int mxSteps = driver->stepsX();
+        if (driver->stepsY() > mxSteps) mxSteps = driver->stepsY();
+
+        QList<double> levels;
+        levels.clear();
+        levels.append(-2.*mxSteps);
+        for (int i=1; i<= 4*mxSteps; i++)  { levels.append(levels.last() + 1.0); }
+        spectrogram->setContourLevels( levels );
+
+        QwtMatrixRasterData *specData = new QwtMatrixRasterData();
+        int numCols = (*F)[0].length();
+        int numRows = (*F).length();
+        QVector<double> dataMatrix;
+        foreach (QVector<double> vec, *F)
+        {
+            dataMatrix += vec;
+        }
+        specData->setValueMatrix(dataMatrix, numCols);
+        specData->setInterval(Qt::Axis::XAxis, QwtInterval(-lenx/2, lenx/2));
+        specData->setInterval(Qt::Axis::YAxis, QwtInterval(-leny/2, leny/2));
+        specData->setResampleMode(QwtMatrixRasterData::BilinearInterpolation);
+
+        spectrogram->setData(specData);
+
+        spectrogram->attach(plot);
+
+        //if (contours) delete contours;
         //contours = new MyContours(X, Y, F, ui->plotWidget);
         //contours->setLevels(levels);
         if (showLabels)
         {
-        //    contours->setLabels(true);
+            //    contours->setLabels(true);
         }
     }
 
@@ -304,13 +331,8 @@ void MainWindow::QwtRefreshUI(void)
 
     // set labels:
 
-    //customPlot->xAxis->setLabel("x");
-    //customPlot->yAxis->setLabel("y");
-
-    // make ticks on bottom axis go outward:
-
-    //customPlot->xAxis->setTickLength(0, 5);
-    //customPlot->xAxis->setSubTickLength(0, 3);
+    plot->setAxisTitle(QwtPlot::xBottom, "x");
+    plot->setAxisTitle(QwtPlot::yLeft,  "y");
 
     plot->replot();
 }

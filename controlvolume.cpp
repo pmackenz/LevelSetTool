@@ -1,6 +1,7 @@
 #include "controlvolume.h"
 #include <QVector>
 #include <iostream>
+#include <QDebug>
 
 ControlVolume::ControlVolume()
     : TimeStepper()
@@ -10,30 +11,12 @@ ControlVolume::ControlVolume()
 
 void ControlVolume::updateGrid()
 {
-    foreach (QVector<double> vec, dF)
-    {
-        vec.clear();
-    }
-    dF.clear();
-
-    dF.resize(Nsteps+1);
-    foreach (QVector<double> vec, dF) {
-        vec.resize(Msteps);
-        vec.fill(0.0);
-    }
-
-    foreach (QVector<double> vec, dF) {
-        std::cout << vec.size() << "..";
-    }
-    std::cout << std::endl;
+    dF = QVector<QVector<double>>(Nsteps+1, QVector<double>(Msteps+1, 0.0));
 }
 
 void ControlVolume::stepOne(double deltaT)
 {
-    foreach (QVector<double> vec, dF) {
-        vec.resize(Msteps);
-        vec.fill(0.0);
-    }
+    dF = QVector<QVector<double> >(Nsteps+1, QVector<double>(Msteps+1, 0.0));
 
     double lx = lenx / Nsteps;
     double ly = leny / Msteps;
@@ -41,7 +24,6 @@ void ControlVolume::stepOne(double deltaT)
     // x-direction transport stage
     for (int j=0; j<=Msteps; j++)
     {
-
         // handle the left boundary first
         int n = Nsteps;    //  + 1 for number of points, - 1 for indexing 0..n-1
 
@@ -118,7 +100,7 @@ void ControlVolume::stepOne(double deltaT)
     {
         for (int j=0; j<=Msteps; j++)
         {
-            gridF[i][j] += mult * dF[i][j];
+            (*gridF)[i][j] += mult * dF[i][j];
         }
     }
 }

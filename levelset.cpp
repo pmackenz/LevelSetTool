@@ -9,6 +9,8 @@
 #include "algorithm"
 #include "limits"
 
+#include <QDebug>
+
 LevelSet::LevelSet(double lx, double ly, int n, int m)
 {
     if (lx > 1.0) dim[0] = lx; else dim[0] = 1.0;     // side width of grid
@@ -20,7 +22,8 @@ LevelSet::LevelSet(double lx, double ly, int n, int m)
 
     shape.clear();
 
-    timeStepper = new FiniteDifference();
+    //timeStepper = new FiniteDifference();
+    timeStepper = new ControlVolume();
     initGrid();
     setVelocityType(0);
 }
@@ -110,7 +113,7 @@ void LevelSet::initGrid(void)
 
 void LevelSet::setVelocityField(QVector<QVector<double> > &vField)
 {
-
+    // reserved to copy a velocity field. e.g. from an MPM simulation, into the code
 }
 
 void LevelSet::setVelocityType(int type)
@@ -124,26 +127,26 @@ void LevelSet::setVelocityType(int type)
     {
     case 0:    // to the right
         for (int i=0; i<=Nsteps; i++) {
-            gridVx.append(QVector<double>(Msteps, 1.0));
-            gridVy.append(QVector<double>(Msteps, 0.0));
+            gridVx.append(QVector<double>(Msteps+1, 1.0));
+            gridVy.append(QVector<double>(Msteps+1, 0.0));
         }
         break;
     case 1:    // to the top
         for (int i=0; i<=Nsteps; i++) {
-            gridVx.append(QVector<double>(Msteps, 0.0));
-            gridVy.append(QVector<double>(Msteps, 1.0));
+            gridVx.append(QVector<double>(Msteps+1, 0.0));
+            gridVy.append(QVector<double>(Msteps+1, 1.0));
         }
         break;
     case 2:    // 45 degrees translation to upper right
         for (int i=0; i<=Nsteps; i++) {
-            gridVx.append(QVector<double>(Msteps, 0.7071));
-            gridVy.append(QVector<double>(Msteps, 0.7071));
+            gridVx.append(QVector<double>(Msteps+1, 0.7071));
+            gridVy.append(QVector<double>(Msteps+1, 0.7071));
         }
         break;
     case 3:    // 45 degrees translation to lower left
         for (int i=0; i<=Nsteps; i++) {
-            gridVx.append(QVector<double>(Msteps,-0.7071));
-            gridVy.append(QVector<double>(Msteps,-0.7071));
+            gridVx.append(QVector<double>(Msteps+1,-0.7071));
+            gridVy.append(QVector<double>(Msteps+1,-0.7071));
         }
         break;
     case 4:     // rigid rotation
@@ -275,13 +278,7 @@ void LevelSet::initF(void)
 {
     if (shape.size() < 2) return;
 
-    for (int k; k<=Nsteps; k++)
-    {
-        for (int l=0; l<=Msteps; l++)
-        {
-            gridF[k][l] = std::numeric_limits<double>::max();
-        }
-    }
+    gridF = QVector<QVector<double> >(Nsteps+1, QVector<double>(Msteps+1, std::numeric_limits<double>::max()));
 
     int npts = shape.size();
 
@@ -341,7 +338,7 @@ void LevelSet::initF(void)
             std::cout << "escape singular metric at j = " << j << std::endl;
         }
 
-        for (int k; k<=Nsteps; k++)
+        for (int k=0; k<=Nsteps; k++)
         {
             for (int l=0; l<=Msteps; l++)
             {
@@ -426,6 +423,9 @@ LINE_INFO LevelSet::getBase4line(QPointF xi, QPointF xj)
 
 void LevelSet::stepOne(double deltaT)
 {
+    timeStepper->setF(gridF);
+    timeStepper->setVx(gridVx);
+    timeStepper->setVy(gridVy);
     timeStepper->stepOne(deltaT);
 }
 

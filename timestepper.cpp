@@ -21,3 +21,19 @@ void TimeStepper::setGridProperties(double lx, double ly, int N, int M)
 
     this->updateGrid();
 }
+
+
+void TimeStepper::setF ( QVector<QVector<double> > &newF )
+{
+    gridF  = &newF;
+}
+
+void TimeStepper::setVx( QVector<QVector<double> > &newVx)
+{
+    gridVx = &newVx;
+}
+
+void TimeStepper::setVy( QVector<QVector<double> > &newVy)
+{
+    gridVy = &newVy;
+}

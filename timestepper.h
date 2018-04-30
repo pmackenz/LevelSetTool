@@ -11,9 +11,9 @@ public:
     TimeStepper();
     virtual void stepOne(double deltaT = 1.0) = 0;
     virtual void setGridProperties(double lx, double ly, int N, int M);
-    virtual void setF ( QVector<QVector<double> > &newF ) { gridF  = &newF;  };
-    virtual void setVx( QVector<QVector<double> > &newVx) { gridVx = &newVx; };
-    virtual void setVy( QVector<QVector<double> > &newVy) { gridVy = &newVy; };
+    virtual void setF ( QVector<QVector<double> > &newF ) ;
+    virtual void setVx( QVector<QVector<double> > &newVx) ;
+    virtual void setVy( QVector<QVector<double> > &newVy) ;
 
     QVector<QVector<double> > * getF() { return gridF; };
 
